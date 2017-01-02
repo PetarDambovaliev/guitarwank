@@ -26,12 +26,6 @@ import android.widget.Button;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
-/* This file contains the source code for examples discussed in Tutorials 1-9 of developerglowingpigs YouTube channel.
- *  The source code is for your convenience purposes only. The source code is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*/
-
-
 public class MediaPlayerService extends Service implements OnCompletionListener,
         OnPreparedListener, OnErrorListener, OnSeekCompleteListener,
         OnInfoListener, OnBufferingUpdateListener {
