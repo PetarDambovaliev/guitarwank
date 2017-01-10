@@ -136,14 +136,14 @@ public class MediaPlayerService extends Service implements OnCompletionListener,
                 PhoneStateListener.LISTEN_CALL_STATE);
 
         // Insert notification start
-        initNotification(R.drawable.noticepause);
+        initNotification(R.drawable.noticepause, "Pause");
 
         boolean noticeClick = intent.getExtras().getBoolean("noticeClick");
 
         if (noticeClick) {
             if (mediaPlayer.isPlaying()) {
                 mediaPlayer.pause();
-                initNotification(R.drawable.noticeplay);
+                initNotification(R.drawable.noticeplay, "Play");
                 MainActivity.buttonPlayStop.setBackgroundResource(R.drawable.play);
 
             } else {
@@ -430,7 +430,7 @@ public class MediaPlayerService extends Service implements OnCompletionListener,
     }
 
     // Create Notification
-    private void initNotification(int buttonImage) {
+    private void initNotification(int buttonImage, String text) {
         int notifReCode = 1;
 
         //What happen when you will click on button
@@ -439,9 +439,9 @@ public class MediaPlayerService extends Service implements OnCompletionListener,
         PendingIntent pendingIntent = PendingIntent.getService(this, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         //Button
-         action = new NotificationCompat.Action.Builder(buttonImage, "", pendingIntent).build();
+         action = new NotificationCompat.Action.Builder(buttonImage, text, pendingIntent).build();
         RemoteViews notificationView = new RemoteViews(getPackageName(), R.layout.notification_controls);
-        notificationView.setImageViewResource(R.id.playButton, R.drawable.pause);
+        //notificationView.setImageViewResource(R.id.playButton, R.drawable.pause);
 
         //Notification
          notification = new NotificationCompat.Builder(this)

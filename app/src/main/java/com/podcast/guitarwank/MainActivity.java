@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.drawable.GradientDrawable;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.telephony.PhoneStateListener;
@@ -15,10 +16,24 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.RelativeLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.Toast;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import android.app.ActionBar.LayoutParams;
 
 /* This file contains the source code for examples discussed in Tutorials 1-9 of developerglowingpigs YouTube channel.
  *  The source code is for your convenience purposes only. The source code is distributed on an "AS IS" BASIS,
@@ -57,6 +72,31 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        ListView layout = (ListView) findViewById(R.id.linear);
+        List<TextView> songs = new ArrayList<TextView>();
+        List<String> titles = new ArrayList<>();
+
+        for (int i = 0; i < 10; i++) {
+            TextView title = new TextView(this);
+            title.setText("track:"+i);
+            title.setWidth(LayoutParams.WRAP_CONTENT);
+            title.setHeight(LayoutParams.WRAP_CONTENT);
+
+            //Add bottom border
+            GradientDrawable gd = new GradientDrawable();
+            gd.setColor(0xFF00FF00); // Changes this drawbale to use a single color instead of a gradient
+            gd.setCornerRadius(5);
+            gd.setStroke(1, 0xFF000000);
+            title.setBackground(gd);
+
+            songs.add(title);
+            titles.add(title.getText().toString());
+        }
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, titles);
+        layout.setAdapter(adapter);
+
         try {
             serviceIntent = new Intent(this, MediaPlayerService.class);
 
