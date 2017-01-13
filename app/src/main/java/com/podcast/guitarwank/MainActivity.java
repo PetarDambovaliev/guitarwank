@@ -16,6 +16,7 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -32,21 +33,25 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import android.app.ActionBar.LayoutParams;
 
-/* This file contains the source code for examples discussed in Tutorials 1-9 of developerglowingpigs YouTube channel.
- *  The source code is for your convenience purposes only. The source code is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*/
+
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 //---Implement OnSeekBarChangeListener to keep track of seek bar changes ---
 public class MainActivity extends Activity implements OnSeekBarChangeListener {
     Intent serviceIntent;
     public static Button buttonPlayStop;
+    public static ScrollView scrollView;
 
     // -- PUT THE NAME OF YOUR AUDIO FILE HERE...URL GOES IN THE SERVICE
-    String strAudioLink = "https://static1.squarespace.com/static/561fb451e4b0fc911f6252cc/t/585ce39129687faf3fb59347/1482482783180/GuitarWank+episode+50+December+26th+2016.m4a/original/GuitarWank+episode+50+December+26th+2016.m4a?download=true";
+    String strAudioLink;
 
     private boolean isOnline;
     private boolean boolMusicPlaying = false;
@@ -68,39 +73,24 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
     boolean mBufferBroadcastIsRegistered;
     private ProgressDialog pdBuff = null;
 
+    //firebase
+    private DatabaseReference db;
+    private static List<Song> songs;
+
+    private ListView layout;
+
+    public static boolean switchedSong = false;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        setFirebase();
+    }
 
-        ListView layout = (ListView) findViewById(R.id.linear);
-        List<TextView> songs = new ArrayList<TextView>();
-        List<String> titles = new ArrayList<>();
-
-        for (int i = 0; i < 10; i++) {
-            TextView title = new TextView(this);
-            title.setText("track:"+i);
-            title.setWidth(LayoutParams.WRAP_CONTENT);
-            title.setHeight(LayoutParams.WRAP_CONTENT);
-
-            //Add bottom border
-            GradientDrawable gd = new GradientDrawable();
-            gd.setColor(0xFF00FF00); // Changes this drawbale to use a single color instead of a gradient
-            gd.setCornerRadius(5);
-            gd.setStroke(1, 0xFF000000);
-            title.setBackground(gd);
-
-            songs.add(title);
-            titles.add(title.getText().toString());
-        }
-
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, titles);
-        layout.setAdapter(adapter);
-
+    private void createService() {
         try {
             serviceIntent = new Intent(this, MediaPlayerService.class);
-
-            // --- set up seekbar intent for broadcasting new position to service ---
             intent = new Intent(BROADCAST_SEEKBAR);
 
             initViews();
@@ -111,6 +101,55 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
                     e.getClass().getName() + " " + e.getMessage(),
                     Toast.LENGTH_LONG).show();
         }
+    }
+
+    private List<String> createTitles() {
+        layout = (ListView) findViewById(R.id.linear);
+        List<String> titles = new ArrayList<>();
+
+        //set default first track
+        strAudioLink = songs.get(0).getLink();
+
+        for (final Song song : songs) {
+            TextView title = new TextView(this);
+            title.setText(song.getTitle());
+            title.setWidth(LayoutParams.WRAP_CONTENT);
+            title.setHeight(LayoutParams.WRAP_CONTENT);
+
+            //Add bottom border
+            GradientDrawable gd = new GradientDrawable();
+            gd.setColor(0xFF00FF00); // Changes this drawbale to use a single color instead of a gradient
+            gd.setCornerRadius(5);
+            gd.setStroke(1, 0xFF000000);
+            title.setBackground(gd);
+
+            titles.add(title.getText().toString());
+        }
+
+
+
+        layout.setOnItemClickListener(new AdapterView.OnItemClickListener(){
+            @Override
+            public void onItemClick(AdapterView<?> adapter, View view, int position, long id) {
+                String title = (String)adapter.getItemAtPosition(position);
+
+                for (Song song : songs) {
+                    if (song.getTitle() == title) {
+                        strAudioLink = song.getLink();
+                    }
+                }
+
+                seekBar.setProgress(0);
+                switchedSong = true;
+                playAudio();
+                boolMusicPlaying = true;
+            }
+        });
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, titles);
+        layout.setAdapter(adapter);
+
+        return titles;
     }
 
     // -- Broadcast Receiver to update position of seekbar from service --
@@ -139,7 +178,12 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
     // --- Set up initial screen ---
     private void initViews() {
         buttonPlayStop = (Button) findViewById(R.id.playButton);
-        buttonPlayStop.setBackgroundResource(R.drawable.play);
+        if (!switchedSong) {
+            buttonPlayStop.setBackgroundResource(R.drawable.play);
+        } else {
+            buttonPlayStop.setBackgroundResource(R.drawable.pause);
+        }
+
 
         // --Reference seekbar in main.xml
         seekBar = (SeekBar) findViewById(R.id.seekBar);
@@ -168,8 +212,12 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
                 if (seekBar.getProgress() > 0 && seekBar.getProgress() < seekMax) {
                     pausedAt = seekBar.getProgress();
                 }
+                if (!switchedSong) {
+                    buttonPlayStop.setBackgroundResource(R.drawable.play);
+                } else {
+                    buttonPlayStop.setBackgroundResource(R.drawable.pause);
+                }
 
-                buttonPlayStop.setBackgroundResource(R.drawable.play);
                 stopMyPlayService();
                 boolMusicPlaying = false;
             }
@@ -214,6 +262,11 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
         if (isOnline) {
             stopMyPlayService();
 
+            if (switchedSong) {
+                buttonPlayStop.setBackgroundResource(R.drawable.pause);
+                //switchedSong = false;
+            }
+
             serviceIntent.putExtra("sentAudioLink", strAudioLink);
             serviceIntent.putExtra("pausedAt", pausedAt);
 
@@ -247,6 +300,10 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
             buttonPlayStop.setBackgroundResource(R.drawable.play);
             alertDialog.show();
         }
+        if (switchedSong) {
+            buttonPlayStop.setBackgroundResource(R.drawable.pause);
+            //switchedSong = false;
+        }
     }
 
     // Handle progress dialogue for buffering...
@@ -274,7 +331,13 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
 
             // Listen for "2" to reset the button to a play button
             case 2:
-                buttonPlayStop.setBackgroundResource(R.drawable.play);
+                if  (switchedSong) {
+                    buttonPlayStop.setBackgroundResource(R.drawable.pause);
+                    switchedSong = false;
+                } else {
+                    buttonPlayStop.setBackgroundResource(R.drawable.play);
+                }
+
                 break;
 
         }
@@ -282,7 +345,6 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
 
     // Progress dialogue...
     private void BufferDialogue() {
-
         pdBuff = ProgressDialog.show(MainActivity.this, "Buffering...",
                 "Wank on...", true);
     }
@@ -357,4 +419,33 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
 
     }
 
+    public void setFirebase () {
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        db = database.getReference();
+
+        db.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                songs = new ArrayList<Song>();
+                // This method is called once with the initial value and again
+                // whenever data at this location is updated.
+                for (DataSnapshot child : dataSnapshot.getChildren()) {
+                    String[] value = child.getValue().toString().split("\\|");
+                    Song song = new Song(value[0], value[1]);
+                    songs.add(song);
+                }
+
+                createTitles();
+                createService();
+                //Log.d(TAG, "Value is: " + value);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                // Failed to read value
+                String a = error.toException().toString();
+                //Log.w(TAG, "Failed to read value.", error.toException());
+            }
+        });
+    }
 }

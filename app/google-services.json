@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "204164237891",
+    "firebase_url": "https://guitarwank-4d698.firebaseio.com",
+    "project_id": "guitarwank-4d698",
+    "storage_bucket": "guitarwank-4d698.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:204164237891:android:d58738646803be8e",
+        "android_client_info": {
+          "package_name": "com.podcast.guitarwank"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "204164237891-cfhm3aftlivqbjmnpdhn1hegnmkcdbfi.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.podcast.guitarwank",
+            "certificate_hash": "CD022F5201A6A546D115C04A0C669907054F0203"
+          }
+        },
+        {
+          "client_id": "204164237891-2t46c8buaj1rrv51j67bfnvvqiaedenj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAHBv8eSaclyVV_5_W-D3Si-YHCoMuPBrk"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "204164237891-2t46c8buaj1rrv51j67bfnvvqiaedenj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

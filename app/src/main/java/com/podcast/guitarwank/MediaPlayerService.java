@@ -144,7 +144,10 @@ public class MediaPlayerService extends Service implements OnCompletionListener,
             if (mediaPlayer.isPlaying()) {
                 mediaPlayer.pause();
                 initNotification(R.drawable.noticeplay, "Play");
-                MainActivity.buttonPlayStop.setBackgroundResource(R.drawable.play);
+
+                if (!MainActivity.switchedSong) {
+                    MainActivity.buttonPlayStop.setBackgroundResource(R.drawable.play);
+                }
 
             } else {
                 mediaPlayer.start();
