@@ -13,44 +13,31 @@ import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
-import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.Toast;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import android.app.ActionBar.LayoutParams;
-
-
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-//---Implement OnSeekBarChangeListener to keep track of seek bar changes ---
 public class MainActivity extends Activity implements OnSeekBarChangeListener {
     Intent serviceIntent;
     public static Button buttonPlayStop;
     public static ScrollView scrollView;
 
-    // -- PUT THE NAME OF YOUR AUDIO FILE HERE...URL GOES IN THE SERVICE
     String strAudioLink;
 
     private boolean isOnline;
@@ -58,22 +45,18 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
     TelephonyManager telephonyManager;
     PhoneStateListener listener;
 
-    // --Seekbar variables --
     private SeekBar seekBar;
     private int seekMax;
     private static int songEnded = 0;
     private static int pausedAt = 0;
     boolean mBroadcastIsRegistered;
 
-    // --Set up constant ID for broadcast of seekbar position--
     public static final String BROADCAST_SEEKBAR = "com.podcast.guitarwank.sendseekbar";
     Intent intent;
 
-    // Progress dialogue and broadcast receiver variables
     boolean mBufferBroadcastIsRegistered;
     private ProgressDialog pdBuff = null;
 
-    //firebase
     private DatabaseReference db;
     private static List<Song> songs;
 
@@ -107,7 +90,6 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
         layout = (ListView) findViewById(R.id.linear);
         List<String> titles = new ArrayList<>();
 
-        //set default first track
         strAudioLink = songs.get(0).getLink();
 
         for (final Song song : songs) {
@@ -125,8 +107,6 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
 
             titles.add(title.getText().toString());
         }
-
-
 
         layout.setOnItemClickListener(new AdapterView.OnItemClickListener(){
             @Override
@@ -152,7 +132,6 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
         return titles;
     }
 
-    // -- Broadcast Receiver to update position of seekbar from service --
     private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent serviceIntent) {
@@ -169,13 +148,12 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
         songEnded = Integer.parseInt(strSongEnded);
         seekBar.setMax(seekMax);
         seekBar.setProgress(seekProgress);
+
         if (songEnded == 1) {
             buttonPlayStop.setBackgroundResource(R.drawable.play);
         }
     }
-    // --End of seekbar update code--
 
-    // --- Set up initial screen ---
     private void initViews() {
         buttonPlayStop = (Button) findViewById(R.id.playButton);
         if (!switchedSong) {
@@ -184,12 +162,9 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
             buttonPlayStop.setBackgroundResource(R.drawable.pause);
         }
 
-
-        // --Reference seekbar in main.xml
         seekBar = (SeekBar) findViewById(R.id.seekBar);
     }
 
-    // --- Set up listeners ---
     private void setListeners() {
         buttonPlayStop.setOnClickListener(new OnClickListener() {
             @Override
@@ -200,7 +175,6 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
         seekBar.setOnSeekBarChangeListener(this);
     }
 
-    // --- invoked from ButtonPlayStop listener above ----
     private void buttonPlayStopClick() {
 
         if (!boolMusicPlaying) {
@@ -224,17 +198,12 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
         }
     }
 
-    // --- Stop service (and music) ---
     private void stopMyPlayService() {
-        // --Unregister broadcastReceiver for seekbar
         if (mBroadcastIsRegistered) {
             try {
                 unregisterReceiver(broadcastReceiver);
                 mBroadcastIsRegistered = false;
             } catch (Exception e) {
-                // Log.e(TAG, "Error in Activity", e);
-                // TODO Auto-generated catch block
-
                 e.printStackTrace();
                 Toast.makeText(
                         getApplicationContext(),
@@ -257,7 +226,6 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
 
     // --- Start service and play music ---
     private void playAudio() {
-
         checkConnectivity();
         if (isOnline) {
             stopMyPlayService();
@@ -293,7 +261,6 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
             alertDialog.setButton("OK", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    // here you can add functions
                 }
             });
             alertDialog.setIcon(R.mipmap.ic_launcher);
@@ -302,7 +269,6 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
         }
         if (switchedSong) {
             buttonPlayStop.setBackgroundResource(R.drawable.pause);
-            //switchedSong = false;
         }
     }
 
@@ -311,25 +277,15 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
         String bufferValue = bufferIntent.getStringExtra("buffering");
         int bufferIntValue = Integer.parseInt(bufferValue);
 
-        // When the broadcasted "buffering" value is 1, show "Buffering"
-        // progress dialogue.
-        // When the broadcasted "buffering" value is 0, dismiss the progress
-        // dialogue.
-
         switch (bufferIntValue) {
             case 0:
-                // Log.v(TAG, "BufferIntValue=0 RemoveBufferDialogue");
-                // txtBuffer.setText("");
                 if (pdBuff != null) {
                     pdBuff.dismiss();
                 }
                 break;
-
             case 1:
                 BufferDialogue();
                 break;
-
-            // Listen for "2" to reset the button to a play button
             case 2:
                 if  (switchedSong) {
                     buttonPlayStop.setBackgroundResource(R.drawable.pause);
@@ -339,11 +295,9 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
                 }
 
                 break;
-
         }
     }
 
-    // Progress dialogue...
     private void BufferDialogue() {
         pdBuff = ProgressDialog.show(MainActivity.this, "Buffering...",
                 "Wank on...", true);
@@ -369,7 +323,6 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
             isOnline = false;
     }
 
-    // -- onPause, unregister broadcast receiver. To improve, also save screen data ---
     @Override
     protected void onPause() {
         // Unregister broadcast receiver
@@ -380,8 +333,6 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
         super.onPause();
     }
 
-
-    // -- onResume register broadcast receiver. To improve, retrieve saved screen data ---
     @Override
     protected void onResume() {
         // Register broadcast receiver
@@ -427,8 +378,7 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 songs = new ArrayList<Song>();
-                // This method is called once with the initial value and again
-                // whenever data at this location is updated.
+
                 for (DataSnapshot child : dataSnapshot.getChildren()) {
                     String[] value = child.getValue().toString().split("\\|");
                     Song song = new Song(value[0], value[1]);
@@ -437,14 +387,11 @@ public class MainActivity extends Activity implements OnSeekBarChangeListener {
 
                 createTitles();
                 createService();
-                //Log.d(TAG, "Value is: " + value);
             }
 
             @Override
             public void onCancelled(DatabaseError error) {
-                // Failed to read value
                 String a = error.toException().toString();
-                //Log.w(TAG, "Failed to read value.", error.toException());
             }
         });
     }
